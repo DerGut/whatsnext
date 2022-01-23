@@ -76,12 +76,18 @@ func run() error {
 		numbersToDisplay = len(pc.changes)
 	}
 
+	fmt.Println()
+	fmt.Println("Next to refactor:")
 
 	fmt.Println()
+	fmt.Printf("commits\tfile\n")
+	fmt.Printf("-------\t----\n")
+
 	highest := pc.changes[:numbersToDisplay]
 	for _, c := range highest {
 		fmt.Printf("%d\t%s\n", c.count, c.path)
 	}
+
 	fmt.Println()
 	fmt.Printf("Scanned %d files in %s\n", len(pc.changes), end.Sub(start))
 
