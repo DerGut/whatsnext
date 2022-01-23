@@ -13,7 +13,10 @@ import (
 	"time"
 )
 
-const defaultBranch = "main"
+const (
+	defaultBranch              = "main"
+	defaultMaxNumbersToDisplay = 10
+)
 
 func main() {
 	if err := run(); err != nil {
@@ -23,12 +26,16 @@ func main() {
 }
 
 func run() error {
-	var branch string
+	var (
+		branch              string
+		maxNumbersToDisplay int
+	)
 	filters := []string{
 		".git/",
 	}
 
 	flag.StringVar(&branch, "branch", defaultBranch, "git branch to use")
+	flag.IntVar(&maxNumbersToDisplay, "n", defaultMaxNumbersToDisplay, "max numbers to display")
 	flag.Func("filter", "a filter pattern", func(s string) error {
 		filters = append(filters, filepath.Clean(s))
 		return nil
@@ -63,6 +70,10 @@ func run() error {
 	sort.Slice(pc.changes, func(i, j int) bool {
 		return pc.changes[i].count > pc.changes[j].count
 	})
+
+	numbersToDisplay := maxNumbersToDisplay
+	if maxNumbersToDisplay > len(pc.changes) {
+		numbersToDisplay = len(pc.changes)
 	}
 
 
