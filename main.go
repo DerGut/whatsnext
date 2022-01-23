@@ -54,18 +54,21 @@ func run() error {
 
 	start := time.Now()
 
-	var pc projectChanges
-	err = filepath.WalkDir(relpath, pc.makeWalkDir(branch, filters))
+	p := project{
+		branch:  branch,
+		filters: filters,
+	}
+	err = filepath.WalkDir(relpath, p.walkDir)
 	if err != nil {
 		return fmt.Errorf("walk directory %s: %w", basepath, err)
 	}
 
 	end := time.Now()
 
-	displayChanges(pc.changes, maxNumbersToDisplay)
+	displayChanges(p.changes, maxNumbersToDisplay)
 
 	fmt.Println()
-	fmt.Printf("Scanned %d files in %s\n", len(pc.changes), end.Sub(start))
+	fmt.Printf("Scanned %d files in %s\n", len(p.changes), end.Sub(start))
 
 	return nil
 }
@@ -79,42 +82,42 @@ type fileChanges struct {
 	count int
 }
 
-type projectChanges struct {
+type project struct {
+	branch  string
+	filters []string
 	changes []fileChanges
 }
 
-func (pc *projectChanges) makeWalkDir(branch string, filters []string) fs.WalkDirFunc {
-	return func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			fmt.Printf("Skipping %s because of: %s", path, err.Error())
-			return filepath.SkipDir
-		}
+func (p *project) walkDir(path string, d fs.DirEntry, err error) error {
+	if err != nil {
+		fmt.Printf("Skipping %s because of: %s", path, err.Error())
+		return filepath.SkipDir
+	}
 
-		filtered, err := filterPath(path, filters)
-		if err != nil {
-			return fmt.Errorf("filter path %s: %w", path, err)
-		}
-		if filtered {
-			return filepath.SkipDir
-		}
+	filtered, err := filterPath(path, p.filters)
+	if err != nil {
+		return fmt.Errorf("filter path %s: %w", path, err)
+	}
+	if filtered {
+		return filepath.SkipDir
+	}
 
-		if d.IsDir() {
-			fmt.Println("Entering " + path)
-			return nil
-		}
-
-		count, err := countCommits(path, branch)
-		if err != nil {
-			return fmt.Errorf("count commits %s: %w", path, err)
-		}
-
-		pc.changes = append(pc.changes, fileChanges{
-			path:  path,
-			count: count,
-		})
-
+	if d.IsDir() {
+		fmt.Println("Entering " + path)
 		return nil
 	}
+
+	count, err := countCommits(path, p.branch)
+	if err != nil {
+		return fmt.Errorf("count commits %s: %w", path, err)
+	}
+
+	p.changes = append(p.changes, fileChanges{
+		path:  path,
+		count: count,
+	})
+
+	return nil
 }
 
 func filterPath(p string, filters []string) (bool, error) {
