@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -16,15 +15,9 @@ import (
 
 const defaultBranch = "main"
 
-var errWrongUsage = errors.New("wrong usage")
-
 func main() {
 	if err := run(); err != nil {
-		if errors.Is(errWrongUsage, err) {
-			fmt.Fprintln(os.Stderr, "Usage: go run main.go [branchname]")
-		} else {
-			fmt.Fprintln(os.Stderr, err)
-		}
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
