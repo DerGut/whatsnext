@@ -62,31 +62,7 @@ func run() error {
 
 	end := time.Now()
 
-	if len(pc.changes) == 0 {
-		fmt.Println("No file changes found")
-		return nil
-	}
-
-	sort.Slice(pc.changes, func(i, j int) bool {
-		return pc.changes[i].count > pc.changes[j].count
-	})
-
-	numbersToDisplay := maxNumbersToDisplay
-	if maxNumbersToDisplay > len(pc.changes) {
-		numbersToDisplay = len(pc.changes)
-	}
-
-	fmt.Println()
-	fmt.Println("Next to refactor:")
-
-	fmt.Println()
-	fmt.Printf("commits\tfile\n")
-	fmt.Printf("-------\t----\n")
-
-	highest := pc.changes[:numbersToDisplay]
-	for _, c := range highest {
-		fmt.Printf("%d\t%s\n", c.count, c.path)
-	}
+	displayChanges(pc.changes, maxNumbersToDisplay)
 
 	fmt.Println()
 	fmt.Printf("Scanned %d files in %s\n", len(pc.changes), end.Sub(start))
@@ -172,4 +148,31 @@ func countCommits(path, branch string) (int, error) {
 	}
 
 	return count, nil
+}
+
+func displayChanges(changes []fileChanges, n int) {
+	if len(changes) == 0 {
+		fmt.Println("No file changes found")
+		return
+	}
+
+	if n > len(changes) {
+		n = len(changes)
+	}
+
+	sort.Slice(changes, func(i, j int) bool {
+		return changes[i].count > changes[j].count
+	})
+
+	fmt.Println()
+	fmt.Println("Next to refactor:")
+
+	fmt.Println()
+	fmt.Printf("commits\tfile\n")
+	fmt.Printf("-------\t----\n")
+
+	highest := changes[:n]
+	for _, c := range highest {
+		fmt.Printf("%d\t%s\n", c.count, c.path)
+	}
 }
