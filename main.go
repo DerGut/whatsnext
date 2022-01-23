@@ -46,31 +46,30 @@ func run() error {
 	}
 
 	start := time.Now()
-	err = filepath.WalkDir(relpath, makeWalkDir(branch, files, filters))
+
+	var pc projectChanges
+	err = filepath.WalkDir(relpath, pc.makeWalkDir(branch, filters))
 	if err != nil {
 		return fmt.Errorf("walk directory %s: %w", basepath, err)
 	}
 
 	end := time.Now()
-	if len(files) == 0 {
-		fmt.Println("No files found")
+
+	if len(pc.changes) == 0 {
+		fmt.Println("No file changes found")
 		return nil
 	}
 
-	counts := make([]int, 0, len(files))
-	for c := range files {
-		counts = append(counts, c)
+	sort.Slice(pc.changes, func(i, j int) bool {
+		return pc.changes[i].count > pc.changes[j].count
+	})
 	}
 
-	sort.Ints(counts)
-
-	highestNumOfCommits := counts[len(counts)-1]
-	next := files[highestNumOfCommits]
 
 	fmt.Println()
-	fmt.Println("Next to refactor:")
-	for _, p := range next {
-		fmt.Printf("%d\t%s\n", highestNumOfCommits, p)
+	highest := pc.changes[:numbersToDisplay]
+	for _, c := range highest {
+		fmt.Printf("%d\t%s\n", c.count, c.path)
 	}
 	fmt.Println()
 	fmt.Printf("Scanned %d files in %s\n", len(pc.changes), end.Sub(start))
@@ -82,7 +81,16 @@ func getPath() (string, error) {
 	return os.Getwd()
 }
 
-func makeWalkDir(branch string, files map[int][]string, filters []string) fs.WalkDirFunc {
+type fileChanges struct {
+	path  string
+	count int
+}
+
+type projectChanges struct {
+	changes []fileChanges
+}
+
+func (pc *projectChanges) makeWalkDir(branch string, filters []string) fs.WalkDirFunc {
 	return func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("Skipping %s because of: %s", path, err.Error())
@@ -107,7 +115,10 @@ func makeWalkDir(branch string, files map[int][]string, filters []string) fs.Wal
 			return fmt.Errorf("count commits %s: %w", path, err)
 		}
 
-		files[count] = append(files[count], path)
+		pc.changes = append(pc.changes, fileChanges{
+			path:  path,
+			count: count,
+		})
 
 		return nil
 	}
