@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const defaultBranch = "main"
@@ -51,12 +52,13 @@ func run() error {
 		return fmt.Errorf("make relpath: %w", err)
 	}
 
-	files := make(map[int][]string)
+	start := time.Now()
 	err = filepath.WalkDir(relpath, makeWalkDir(branch, files, filters))
 	if err != nil {
 		return fmt.Errorf("walk directory %s: %w", basepath, err)
 	}
 
+	end := time.Now()
 	if len(files) == 0 {
 		fmt.Println("No files found")
 		return nil
@@ -77,6 +79,8 @@ func run() error {
 	for _, p := range next {
 		fmt.Printf("%d\t%s\n", highestNumOfCommits, p)
 	}
+	fmt.Println()
+	fmt.Printf("Scanned %d files in %s\n", len(pc.changes), end.Sub(start))
 
 	return nil
 }
