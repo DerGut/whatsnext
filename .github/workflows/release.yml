@@ -8,7 +8,20 @@ on:
       - "v*"
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: run golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.29
   release:
+    needs:
+      - lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
